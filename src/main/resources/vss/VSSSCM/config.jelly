@@ -1,0 +1,29 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="Server Path" description="Path to the VSS server's srcsafe.ini file.">
+	  <f:textbox name="server_path" value="${scm.serverPath}"/>
+  </f:entry>
+
+  <f:entry title="User Name">
+	  <f:textbox name="user" value="${scm.user}"/>
+  </f:entry>
+
+  <f:entry title="Password">
+	  <input type="password" name="password" class="setting-input" value="${scm.password}"/>
+  </f:entry>
+
+  <f:entry title="VSS Folder Path" description="Path of the folder in VSS that needs to be fetched.">
+	  <f:textbox name="vss_path" value="${scm.vssPath}"/>
+  </f:entry>
+
+  <f:entry title="Keep the files as writable">
+	  <f:checkbox name="writable" checked="${scm.writable}"/>
+  </f:entry>
+
+  <f:entry title="Fetch the files in recursive order">
+	  <f:checkbox name="recursive" checked="${scm.recursive}"/>
+  </f:entry>
+
+  <f:entry title="Use update" description="If checked, Hudson will try to optimize fetching, making build faster. Not recommended for production releases.">
+	  <f:checkbox name="useupdate" checked="${scm.useUpdate}"/>
+  </f:entry>
+</j:jelly>
