@@ -10,7 +10,7 @@
   <artifactId>vss</artifactId>
   <packaging>hpi</packaging>
   <name>Hudson Visual SourceSafe Plug-in</name>
-  <version>1.1</version>
+  <version>1.2-SNAPSHOT</version>
   <url>http://hudson.gotdns.com/wiki/display/HUDSON/Visual+SourceSafe+Plugin</url>
   <licenses>
     <license><name>MIT license</name><comments>All source code is under the MIT license.</comments></license>
@@ -28,8 +28,4 @@
       <version>20070717</version>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>vss-1_1</tag>
-  </scm>
 </project>
