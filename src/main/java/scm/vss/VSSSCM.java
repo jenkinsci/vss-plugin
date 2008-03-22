@@ -272,7 +272,7 @@ public class VSSSCM extends SCM
 	 * Returns the history entries after the start date.
 	 * 
 	 * @param startDate The date after which the history entries are needed.
-	 * @param List of files deleted to collect.
+	 * @param deletions List of files deleted to collect.
 	 * @return The list of history entries.
 	 * @throws IOException Any error while getting the history information.
 	 * 
@@ -290,7 +290,7 @@ public class VSSSCM extends SCM
 	 * 
 	 * @param startDate The date after which the history entries are needed.
 	 * @param maxEntries Maximum number of entries to be fetched.
-	 * @param List of files deleted to collect.
+	 * @param deletions List of files deleted to collect.
 	 * @return The list of history entries.
 	 * @throws IOException Any error while getting the history information.
 	 * 
