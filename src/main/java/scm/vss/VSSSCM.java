@@ -1,5 +1,7 @@
 package scm.vss;
 
+import com4j.Com4jObject;
+import com4j.Holder;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
@@ -13,6 +15,15 @@ import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import org.kohsuke.stapler.StaplerRequest;
+import org.xml.sax.SAXException;
+import vss.ClassFactory;
+import vss.IVSSDatabase;
+import vss.IVSSItem;
+import vss.IVSSItems;
+import vss.IVSSVersion;
+import vss.IVSSVersions;
+import vss.VSSFlags;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,22 +36,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
-import org.kohsuke.stapler.StaplerRequest;
-import org.xml.sax.SAXException;
-
-import vss.ClassFactory;
-import vss.IVSSDatabase;
-import vss.IVSSItem;
-import vss.IVSSItems;
-import vss.IVSSVersion;
-import vss.IVSSVersions;
-import vss.VSSFlags;
-
-import com4j.Com4jObject;
-import com4j.Holder;
 
 /**
  * 
@@ -186,17 +182,7 @@ public class VSSSCM extends SCM
 		this.useUpdate = useUpdate;
 	}
 
-	/**
-	 *
-	 * No special environment variables needed.
-	 * 
-	 */
-	public void buildEnvVars(Map env)
-	{
-		//Nothing special.
-	}
-
-	/**
+    /**
 	 * 
 	 * Module root same as the workspace root.
 	 * 
