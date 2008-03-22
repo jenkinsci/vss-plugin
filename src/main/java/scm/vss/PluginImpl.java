@@ -20,7 +20,6 @@ public class PluginImpl extends Plugin
 	public void start() throws Exception
 	{
 		SCMS.SCMS.add(VSSSCM.DESCRIPTOR);
-		//Publisher.PUBLISHERS.add(MailPublisher.DESCRIPTOR);
 		super.start();
 	}
 }
