@@ -22,14 +22,14 @@ import org.xml.sax.SAXException;
  * @author vara
  *
  */
-public class VSSChangeLogSet extends ChangeLogSet
+public class VSSChangeLogSet extends ChangeLogSet<VSSChangeLogSet.VSSChangeLog>
 {
 	/**
 	 * 
 	 * List of history entries.
 	 * 
 	 */
-	private List history = null;
+	private List<VSSChangeLog> history = null;
 
 	/**
 	 * 
@@ -44,7 +44,7 @@ public class VSSChangeLogSet extends ChangeLogSet
 	{
 		super(build);
 
-		history = new ArrayList();
+		history = new ArrayList<VSSChangeLog>();
 
 		//Parse the change log file.
 		Digester digester = new Digester();
@@ -77,7 +77,7 @@ public class VSSChangeLogSet extends ChangeLogSet
 	 * Returns the iterator for history entries.
 	 * 
 	 */
-	public Iterator iterator()
+	public Iterator<VSSChangeLog> iterator()
 	{
 		return history.iterator();
 	}
@@ -346,7 +346,7 @@ public class VSSChangeLogSet extends ChangeLogSet
 		 * Returns the affected files collection.
 		 * 
 		 */
-		public Collection getAffectedPaths()
+		public Collection<String> getAffectedPaths()
 		{
 			return Collections.singletonList(file);
 		}

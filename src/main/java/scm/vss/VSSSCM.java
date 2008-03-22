@@ -11,7 +11,6 @@ import hudson.model.Build;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
-import hudson.scm.ChangeLogSet;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -223,8 +222,8 @@ public class VSSSCM extends SCM
 			throws IOException, InterruptedException
 	{
 		//Are there any builds made before this?
-		List historyEntries;
-		List deletions = null;
+		List<Object[]> historyEntries;
+		List<String> deletions = null;
 		Build lastBuild = (Build)build.getPreviousBuild();
 		if(lastBuild == null)
 		{
@@ -235,7 +234,7 @@ public class VSSSCM extends SCM
 		{
 			if(useUpdate)
 			{
-				deletions = new ArrayList();
+				deletions = new ArrayList<String>();
 			}
 
 			//Get the changes from last build time.
@@ -276,7 +275,7 @@ public class VSSSCM extends SCM
 	 * @throws IOException Any error while getting the history information.
 	 * 
 	 */
-	private List getHistoryEntries(Date startDate, List deletions)
+	private List<Object[]> getHistoryEntries(Date startDate, List<String> deletions)
 			throws IOException
 	{
 		return getHistoryEntries(startDate, MAX_HISTORY_ENTRIES, deletions);
@@ -294,8 +293,8 @@ public class VSSSCM extends SCM
 	 * @throws IOException Any error while getting the history information.
 	 * 
 	 */
-	private List getHistoryEntries(Date startDate, int maxEntries, 
-			List deletions) throws IOException
+	private List<Object[]> getHistoryEntries(Date startDate, int maxEntries,
+			List<String> deletions) throws IOException
 	{
 		try
 		{
@@ -318,7 +317,7 @@ public class VSSSCM extends SCM
 			IVSSVersions versions = vssItem.versions(flag);
 
 			//Loop through and collect he information.
-			List historyEntries = new ArrayList();
+			List<Object[]> historyEntries = new ArrayList<Object[]>();
 			int historyCount = 0;
 			Iterator iterator = versions.iterator();
 			while(historyCount < maxEntries && iterator.hasNext())
@@ -431,7 +430,7 @@ public class VSSSCM extends SCM
 	 * @throws IOException Any error while writing the log file.
 	 * 
 	 */
-	private void save(File file, List history) throws IOException
+	private void save(File file, List<Object[]> history) throws IOException
 	{
 		PrintStream stream = new PrintStream(new FileOutputStream(file));
 		Object[] entry;
@@ -441,7 +440,7 @@ public class VSSSCM extends SCM
 		for(int index = 0;index < size;index ++)
 		{
 			stream.println("\t<entry>");
-			entry = (Object[])history.get(index);
+			entry = history.get(index);
 			for(int tag = 0;tag < tagcount;tag ++)
 			{
 				stream.print("\t\t<");
@@ -522,12 +521,12 @@ public class VSSSCM extends SCM
 	 * @param deletions Files to be deleted recursively.
 	 * 
 	 */
-	private void delete(File workspace, List deletions)
+	private void delete(File workspace, List<String> deletions)
 	{
 		int size = deletions.size();
 		for(int index = 0;index < size;index ++)
 		{
-			File file = new File(workspace, (String)deletions.get(index));
+			File file = new File(workspace, deletions.get(index));
 			if(file.exists())
 			{
 				try
@@ -592,7 +591,7 @@ public class VSSSCM extends SCM
 		//Get the items from the folder.
 		IVSSItems items = folder.items(false);
 		Iterator iterator = items.iterator();
-		Set itemSet = new HashSet(items.count());
+		Set<String> itemSet = new HashSet<String>(items.count());
 
 		//Just copy the items to a set.
 		while(iterator.hasNext())
@@ -707,7 +706,7 @@ public class VSSSCM extends SCM
 		 * Parses and returns the change log details.
 		 * 
 		 */
-		public ChangeLogSet parse(AbstractBuild build, File changeLogFile)
+		public VSSChangeLogSet parse(AbstractBuild build, File changeLogFile)
 				throws IOException, SAXException
 		{
 			return new VSSChangeLogSet(build, changeLogFile);
