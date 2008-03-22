@@ -52,10 +52,8 @@ public class VSSChangeLogSet extends ChangeLogSet<VSSChangeLogSet.VSSChangeLog>
 		digester.push(history);
         digester.addObjectCreate("*/entry", VSSChangeLog.class);
 
-        int tagCount = VSSSCM.TAGS.length;
-        for(int tag = 0;tag < tagCount;tag ++)
-        {
-            digester.addBeanPropertySetter("*/entry/" + VSSSCM.TAGS[tag]);
+        for (String tag : VSSSCM.TAGS) {
+            digester.addBeanPropertySetter("*/entry/" + tag);
         }
 
         digester.addSetNext("*/entry","add");

@@ -523,23 +523,21 @@ public class VSSSCM extends SCM
 	 */
 	private void delete(File workspace, List<String> deletions)
 	{
-		int size = deletions.size();
-		for(int index = 0;index < size;index ++)
-		{
-			File file = new File(workspace, deletions.get(index));
-			if(file.exists())
-			{
-				try
-				{
-					Util.deleteRecursive(file);
-				}
-				catch(IOException e)
-				{
-					//Just ignore the error.
-				}
-			}
-		}
-	}
+        for (String deletion : deletions) {
+            File file = new File(workspace,deletion);
+            if(file.exists())
+            {
+                try
+                {
+                    Util.deleteRecursive(file);
+                }
+                catch(IOException e)
+                {
+                    //Just ignore the error.
+                }
+            }
+        }
+    }
 
 	/**
 	 * 
