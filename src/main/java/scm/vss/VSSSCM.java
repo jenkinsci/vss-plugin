@@ -325,8 +325,7 @@ public class VSSSCM extends SCM
 			while(historyCount < maxEntries && iterator.hasNext())
 			{
 				Com4jObject object = (Com4jObject)iterator.next();
-				IVSSVersion version = (IVSSVersion)object.queryInterface(
-									   IVSSVersion.class);
+				IVSSVersion version = object.queryInterface(IVSSVersion.class);
 
 				//Break off if the history entries are before the given start
 				//date.
@@ -358,7 +357,7 @@ public class VSSSCM extends SCM
 				   ADDED_ACTION.equals(content[3]) || 
 				   RECOVERED_ACTION.equals(content[3])))
 				{
-					IVSSItem preItem = historyItem.version(new Integer(versionNo - 1));
+					IVSSItem preItem = historyItem.version(versionNo - 1);
 
 					//Collect files from this version and previous version.
 					Set post = collectItems(historyItem);
@@ -382,7 +381,7 @@ public class VSSSCM extends SCM
 					Iterator chgIterator = post.iterator();
 					if(chgIterator.hasNext())
 					{
-						content[0] = (String)chgIterator.next();
+						content[0] = chgIterator.next();
 					}
 					
 				}
