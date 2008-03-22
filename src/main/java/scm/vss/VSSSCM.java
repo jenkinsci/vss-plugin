@@ -9,7 +9,6 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Build;
 import hudson.model.BuildListener;
-import hudson.model.Describable;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
@@ -224,7 +223,7 @@ public class VSSSCM extends SCM
 			throws IOException, InterruptedException
 	{
 		//Are there any builds made before this?
-		List historyEntries = null;
+		List historyEntries;
 		List deletions = null;
 		Build lastBuild = (Build)build.getPreviousBuild();
 		if(lastBuild == null)
@@ -307,7 +306,7 @@ public class VSSSCM extends SCM
 			//Get history.
 			IVSSItem vssItem = database.vssItem(vssPath, false);
 			int vssLength = vssItem.spec().length();
-			int flag = 0;
+			int flag;
 			if(isRecursive)
 			{
 				flag = VSSFlags.VSSFLAG_RECURSYES.comEnumValue();
@@ -435,7 +434,7 @@ public class VSSSCM extends SCM
 	private void save(File file, List history) throws IOException
 	{
 		PrintStream stream = new PrintStream(new FileOutputStream(file));
-		Object[] entry = null;
+		Object[] entry;
 		int size = history.size();
 		int tagcount = TAGS.length;
 		stream.println("<history>");
@@ -561,7 +560,7 @@ public class VSSSCM extends SCM
 		//Loop through and replace the special chars.
 		String string = object.toString();
 		int size = string.length();
-		char ch = 0;
+		char ch;
 		StringBuffer escapedString = new StringBuffer(size);
 		for(int index = 0;index < size;index ++)
 		{
@@ -596,12 +595,10 @@ public class VSSSCM extends SCM
 		Set itemSet = new HashSet(items.count());
 
 		//Just copy the items to a set.
-		IVSSItem item = null;
-		Com4jObject object = null;
 		while(iterator.hasNext())
 		{
-			object = (Com4jObject)iterator.next();
-			item = (IVSSItem)object.queryInterface(IVSSItem.class);
+            Com4jObject object = (Com4jObject)iterator.next();
+            IVSSItem item = object.queryInterface(IVSSItem.class);
 			itemSet.add(item.spec());
 		}
 		return itemSet;
@@ -723,7 +720,7 @@ public class VSSSCM extends SCM
 	 * VSS descriptor that describes about the VSS SCM.
 	 * 
 	 */
-	private static class VSSDescriptor extends SCMDescriptor
+	private static class VSSDescriptor extends SCMDescriptor<VSSSCM>
 	{
 		/**
 		 * 
@@ -751,7 +748,7 @@ public class VSSSCM extends SCM
 		 * @return New instance of VSS SCM.
 		 * 
 		 */
-		public Describable newInstance(StaplerRequest req) throws FormException
+		public VSSSCM newInstance(StaplerRequest req) throws FormException
 		{
 			return new VSSSCM(
 					req.getParameter("server_path"), 
