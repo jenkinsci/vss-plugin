@@ -298,7 +298,14 @@ public class VSSSCM extends SCM
 	{
 		try
 		{
-			//Open database.
+                    if(!new File(serverPath).exists()) {
+                        throw new IOException(serverPath+" doesn't exist. Configuration error?");
+                    }
+                    if(!new File(serverPath).isDirectory()) {
+                        throw new IOException(serverPath+" is a directory. Please specify the location of srcsafe.ini");
+                    }
+
+                        //Open database.
 			IVSSDatabase database = ClassFactory.createVSSDatabase();
 			database.open(serverPath, user, password);
 
