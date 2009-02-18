@@ -224,7 +224,7 @@ public class VSSSCM extends SCM
 		//Are there any builds made before this?
 		List<Object[]> historyEntries;
 		List<String> deletions = null;
-		Build lastBuild = (Build)build.getPreviousBuild();
+		AbstractBuild lastBuild = (AbstractBuild) build.getPreviousBuild();
 		if(lastBuild == null)
 		{
 			//Get all changes.
@@ -507,7 +507,7 @@ public class VSSSCM extends SCM
 			}
 
 			//Get the latest from vss.
-			vssItem.get(new Holder(localPath), flags);
+			vssItem.get(new Holder<String>(localPath), flags);
 
 			//Dispose.
 			vssItem.dispose();
@@ -565,7 +565,7 @@ public class VSSSCM extends SCM
 		String string = object.toString();
 		int size = string.length();
 		char ch;
-		StringBuffer escapedString = new StringBuffer(size);
+        StringBuilder escapedString = new StringBuilder(size);
 		for(int index = 0;index < size;index ++)
 		{
 			//Convert special chars.
