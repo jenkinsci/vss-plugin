@@ -301,7 +301,7 @@ public class VSSSCM extends SCM
                     if(!new File(serverPath).exists()) {
                         throw new IOException(serverPath+" doesn't exist. Configuration error?");
                     }
-                    if(!new File(serverPath).isDirectory()) {
+                    if(new File(serverPath).isDirectory()) {
                         throw new IOException(serverPath+" is a directory. Please specify the location of srcsafe.ini");
                     }
 
