@@ -5,6 +5,7 @@ import com4j.Holder;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
+import hudson.Extension;
 import hudson.util.IOException2;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -46,13 +47,6 @@ import java.util.Set;
  */
 public class VSSSCM extends SCM
 {
-	/**
-	 * 
-	 * VSS descriptor.
-	 * 
-	 */
-	public static final SCMDescriptor DESCRIPTOR = new VSSDescriptor();
-
 	/**
 	 * 
 	 * Maximum history entries to be maintained.
@@ -619,16 +613,6 @@ public class VSSSCM extends SCM
 		return new VSSChangeLogParser();
 	}
 
-	/**
-	 * 
-	 * Returns the descriptor.
-	 * 
-	 */
-	public SCMDescriptor getDescriptor()
-	{
-		return DESCRIPTOR;
-	}
-
 	//Attributes.
 	/**
 	 * 
@@ -725,7 +709,8 @@ public class VSSSCM extends SCM
 	 * VSS descriptor that describes about the VSS SCM.
 	 * 
 	 */
-	private static class VSSDescriptor extends SCMDescriptor<VSSSCM>
+    @Extension
+	public static class VSSDescriptor extends SCMDescriptor<VSSSCM>
 	{
 		/**
 		 * 
