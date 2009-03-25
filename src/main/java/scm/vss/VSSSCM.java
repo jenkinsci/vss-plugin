@@ -5,6 +5,7 @@ import com4j.Holder;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
+import hudson.util.IOException2;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Build;
@@ -424,7 +425,7 @@ public class VSSSCM extends SCM
 		catch(RuntimeException error)
 		{
 			//Some COM error.
-			throw new IOException(error.getMessage());
+			throw new IOException2(error);
 		}
 	}
 
@@ -516,7 +517,7 @@ public class VSSSCM extends SCM
 		catch(RuntimeException error)
 		{
 			//Some COM error.
-			throw new IOException(error.getMessage());
+			throw new IOException2(error);
 		}
 	}
 
