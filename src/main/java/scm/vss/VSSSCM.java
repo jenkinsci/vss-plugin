@@ -12,6 +12,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Build;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
+import hudson.model.Hudson;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
@@ -216,6 +217,12 @@ public class VSSSCM extends SCM
 			BuildListener listener, File changelogFile)
 			throws IOException, InterruptedException
 	{
+        // better be on Windows, or else it won't work
+        if(launcher.isUnix()) {
+            listener.getLogger().println("Visual SourceSafe support only runs on Windows");
+            return false;
+        }
+
 		//Are there any builds made before this?
 		List<Object[]> historyEntries;
 		List<String> deletions = null;
