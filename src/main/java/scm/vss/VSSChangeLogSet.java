@@ -3,6 +3,7 @@ package scm.vss;
 import hudson.model.AbstractBuild;
 import hudson.model.User;
 import hudson.scm.ChangeLogSet;
+import hudson.util.IOException2;
 
 import java.io.File;
 import java.io.IOException;
