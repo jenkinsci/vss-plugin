@@ -57,8 +57,14 @@ public class VSSChangeLogSet extends ChangeLogSet<VSSChangeLogSet.VSSChangeLog>
         }
 
         digester.addSetNext("*/entry","add");
-        digester.parse(changeLogFile);
-	}
+        try {
+            digester.parse(changeLogFile);
+        } catch (IOException e) {
+            throw new IOException2("Failed to parse "+changeLogFile,e);
+        } catch (SAXException e) {
+            throw new IOException2("Failed to parse "+changeLogFile,e);
+        }
+    }
 
 	/**
 	 * 
