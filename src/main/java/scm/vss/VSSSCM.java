@@ -30,6 +30,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.FileWriter;
+import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -441,7 +444,7 @@ public class VSSSCM extends SCM
 	 */
 	private void save(File file, List<Object[]> history) throws IOException
 	{
-		PrintStream stream = new PrintStream(new FileOutputStream(file));
+		PrintWriter stream = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),"UTF-8"));
 		Object[] entry;
 		int size = history.size();
 		int tagcount = TAGS.length;
