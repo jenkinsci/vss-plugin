@@ -1,38 +1,23 @@
 package scm.vss;
 
-import com4j.Com4jObject;
-import com4j.Holder;
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.Extension;
-import hudson.util.IOException2;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.model.Build;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
-import hudson.model.Hudson;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
-import org.kohsuke.stapler.StaplerRequest;
-import org.xml.sax.SAXException;
-import vss.ClassFactory;
-import vss.IVSSDatabase;
-import vss.IVSSItem;
-import vss.IVSSItems;
-import vss.IVSSVersion;
-import vss.IVSSVersions;
-import vss.VSSFlags;
+import hudson.util.IOException2;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.FileWriter;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,6 +26,20 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import org.kohsuke.stapler.StaplerRequest;
+import org.xml.sax.SAXException;
+
+import vss.ClassFactory;
+import vss.IVSSDatabase;
+import vss.IVSSItem;
+import vss.IVSSItems;
+import vss.IVSSVersion;
+import vss.IVSSVersions;
+import vss.VSSFlags;
+
+import com4j.Com4jObject;
+import com4j.Holder;
 
 /**
  * 
@@ -198,7 +197,7 @@ public class VSSSCM extends SCM
 			FilePath workspace, TaskListener listener) throws IOException
     {
 		//If this is the build then it deserves a build.
-		Build lastBuild = (Build)project.getLastBuild();
+		AbstractBuild<?, ?> lastBuild = (AbstractBuild<?,?>)project.getLastBuild();
 		if(lastBuild == null)
 		{
 			return true;
