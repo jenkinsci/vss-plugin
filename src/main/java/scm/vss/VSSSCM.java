@@ -9,8 +9,10 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
+import hudson.scm.PollingResult;
 import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import hudson.scm.SCMRevisionState;
 import hudson.util.IOException2;
 
 import java.io.File;
@@ -42,33 +44,25 @@ import com4j.Com4jObject;
 import com4j.Holder;
 
 /**
- * 
  * Manages the content from Microsoft Visual Source Safe.
  * 
  * @author vara
- *
  */
 public class VSSSCM extends SCM
 {
-	/**
-	 * 
+	/** 
 	 * Maximum history entries to be maintained.
-	 * 
 	 */
 	private static final int MAX_HISTORY_ENTRIES = 100;
 
 	/**
-	 * 
 	 * Date format to display the log details.
-	 * 
 	 */
 	private static final DateFormat DATE_FORMAT = 
 						 new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
 	/**
-	 * 
 	 * The change log XML tags.
-	 * 
 	 */
 	static final String[] TAGS = new String[]{
 			"file", "user", "comment", "action", "date", "version"};
@@ -81,89 +75,67 @@ public class VSSSCM extends SCM
 	private static final String DELETED_ACTION = "Deleted";
 
 	/**
-	 * 
 	 * Constant representing destroyed type history entry from VSS.
-	 * 
 	 */
 	private static final String DESTROYED_ACTION = "Destroyed";
 
 	/**
-	 * 
 	 * Constant representing added type history entry from VSS.
-	 * 
 	 */
 	private static final String ADDED_ACTION = "Added";
 
 	/**
-	 * 
 	 * Constant representing recovered type history entry from VSS.
-	 * 
 	 */
 	private static final String RECOVERED_ACTION = "Recovered";
 
 	/**
-	 * 
 	 * Path to srcsafe.ini file.
-	 * 
 	 */
 	private String serverPath = null;
 
 	/**
-	 * 
 	 * User name.
-	 * 
 	 */
 	private String user = null;
 
 	/**
-	 * 
 	 * Password.
-	 * 
 	 */
 	private String password = null;
 
 	/**
-	 * 
 	 * Directory path in the VSS server.
-	 * 
 	 */
-	private String vssPath = null;
+	private String[] vssPaths = null;
 
 	/**
-	 * 
-	 * Indicates whether to keep the files in wriable mode or not.
-	 * 
+	 * Indicates whether to keep the files in writable mode or not.
 	 */
 	private boolean isWritable = false;
 
 	/**
-	 * 
-	 * Indicates whether to check/get the files in recusive order or not.
-	 * 
+	 * Indicates whether to check/get the files in recursive order or not.
 	 */
 	private boolean isRecursive = true;
 
 	/**
-	 * 
 	 * Indicates whether entire set of files are to be fetched or to get only 
 	 * updates from the VSS.
-	 * 
 	 */
 	private boolean useUpdate = false;
 
 	/**
-	 * 
 	 * All the details necessary to get the content from VSS.
 	 * 
 	 * @param serverPath Path to srcsafe.ini file. 
 	 * @param user User name.
 	 * @param password Password.
 	 * @param vssPath Directory path in the VSS server.
-	 * @param isWritable Indicates whether to keep the files in wriable mode or 
+	 * @param isWritable Indicates whether to keep the files in writable mode or 
 	 * not.
 	 * @param isRecursive Indicates whether to get the files in recursive order
 	 * or not.
-	 * 
 	 */
 	public VSSSCM(String serverPath, String user, String password, 
 			String vssPath, boolean isWritable, boolean isRecursive, 
@@ -172,7 +144,7 @@ public class VSSSCM extends SCM
 		this.serverPath = serverPath;
 		this.user = user;
 		this.password = password;
-		this.vssPath = vssPath;
+		this.vssPaths = vssPath.split(",");
 		this.isWritable = isWritable;
 		this.isRecursive = isRecursive;
 		this.useUpdate = useUpdate;
@@ -183,32 +155,12 @@ public class VSSSCM extends SCM
 	 * Module root same as the workspace root.
 	 * 
 	 */
-	public FilePath getModuleRoot(FilePath workspace)
+    @Override
+	public FilePath getModuleRoot(FilePath workspace, AbstractBuild build)
 	{
 		return workspace;
 	}
 
-	/**
-	 * 
-	 * Poll for changes in the workspace in VSS.
-	 * 
-	 */
-	public boolean pollChanges(AbstractProject project, Launcher launcher, 
-			FilePath workspace, TaskListener listener) throws IOException
-    {
-		//If this is the build then it deserves a build.
-		AbstractBuild<?, ?> lastBuild = (AbstractBuild<?,?>)project.getLastBuild();
-		if(lastBuild == null)
-		{
-			return true;
-		}
-		else
-		{
-			//Are there any changes from last build.
-			Date buildTime = lastBuild.getTimestamp().getTime();
-			return getHistoryEntries(buildTime, 1, null).size() != 0;
-		}
-    }
 
 	/**
 	 * 
@@ -220,19 +172,21 @@ public class VSSSCM extends SCM
 			throws IOException, InterruptedException
 	{
         // better be on Windows, or else it won't work
-        if(launcher.isUnix()) {
-            listener.getLogger().println("Visual SourceSafe support only runs on Windows");
+        if(launcher.isUnix())
+        {
+            listener.getLogger().println("[checkout] ERROR : VSS only runs on Windows");
             return false;
         }
 
 		//Are there any builds made before this?
+        listener.getLogger().println("[checkout] Checking previous build");
 		List<Object[]> historyEntries;
 		List<String> deletions = null;
 		AbstractBuild lastBuild = (AbstractBuild) build.getPreviousBuild();
 		if(lastBuild == null)
 		{
 			//Get all changes.
-			historyEntries = getHistoryEntries(new Date(0), null);
+			historyEntries = getHistoryEntries(new Date(0), null, listener);
 		}
 		else
 		{
@@ -243,7 +197,7 @@ public class VSSSCM extends SCM
 
 			//Get the changes from last build time.
 			Date buildTime = lastBuild.getTimestamp().getTime();
-			historyEntries = getHistoryEntries(buildTime, deletions);
+			historyEntries = getHistoryEntries(buildTime, deletions, listener);
 		
 			//Too many changes?
 			if(historyEntries.size() >= MAX_HISTORY_ENTRIES)
@@ -251,8 +205,9 @@ public class VSSSCM extends SCM
 				deletions = null;
 			}
 		}
-
+        
 		//Clean and refetch the content.
+        listener.getLogger().println("[checkout] Cleaning workspace");
 		if(deletions != null)
 		{
 			delete(new File(workspace.toURI()), deletions);
@@ -261,16 +216,43 @@ public class VSSSCM extends SCM
 		{
 			workspace.deleteContents();
 		}
-		get(new File(workspace.toURI()).getAbsolutePath());
 
-		//Persist the changes.
+        // we have multiple paths, and want the files in the correct
+        // place. So, create the folder structure as well and get the
+        // files for each path.
+        for (String vssPath : vssPaths)
+        {
+            // Create the path structure. This is a workaround because
+            // I was unable to get source safe to do it for me.
+            // Basically, if we have two paths $/path1 and $/path2, we
+            // want the workspace to result in /workspaceroot/path1 and
+            // /workspaceroot/path2.
+
+            // 1. remove the $/ symbol
+            File file = new File(workspace.toURI());
+            String localPath = file.getAbsolutePath() + "/" + vssPath.substring(2);
+            
+            // 2. create the folders in the workspace
+            try
+            {
+                (new File(localPath)).mkdirs();
+            } catch (Exception e)
+            {
+                System.err.println("Error: " + e.getMessage());
+            }
+
+            // 3. get the files for this path
+            get(localPath, vssPath, listener);
+        }
+
+        //Persist the changes.
+        listener.getLogger().println("[checkout] Saving log file");
 		save(changelogFile, historyEntries);
 
 		return true;
 	}
 			
 	/**
-	 * 
 	 * Returns the history entries after the start date.
 	 * 
 	 * @param startDate The date after which the history entries are needed.
@@ -279,14 +261,12 @@ public class VSSSCM extends SCM
 	 * @throws IOException Any error while getting the history information.
 	 * 
 	 */
-	private List<Object[]> getHistoryEntries(Date startDate, List<String> deletions)
-			throws IOException
+	private List<Object[]> getHistoryEntries(Date startDate, List<String> deletions, TaskListener listener) throws IOException
 	{
-		return getHistoryEntries(startDate, MAX_HISTORY_ENTRIES, deletions);
+		return getHistoryEntries(startDate, MAX_HISTORY_ENTRIES, deletions, listener);
 	}
 
 	/**
-	 * 
 	 * Returns the history entries after the start date. Maximum specified
 	 * number of entries will be collected.
 	 * 
@@ -297,132 +277,151 @@ public class VSSSCM extends SCM
 	 * @throws IOException Any error while getting the history information.
 	 * 
 	 */
-	private List<Object[]> getHistoryEntries(Date startDate, int maxEntries,
-			List<String> deletions) throws IOException
+	private List<Object[]> getHistoryEntries(Date startDate, int maxEntries, List<String> deletions, TaskListener listener) throws IOException
 	{
-		try
+        listener.getLogger().println("[history] Getting list of changes since " + startDate);
+        
+        if(!new File(serverPath).exists())
+        {
+            throw new IOException(serverPath + " doesn't exist. Configuration error?");
+        }
+
+        if(new File(serverPath).isDirectory())
+        {
+            throw new IOException(serverPath + " is a directory. Please specify the location of srcsafe.ini");
+        }
+
+        //Open database.
+        IVSSDatabase database;
+        try
 		{
-                    if(!new File(serverPath).exists()) {
-                        throw new IOException(serverPath+" doesn't exist. Configuration error?");
-                    }
-                    if(new File(serverPath).isDirectory()) {
-                        throw new IOException(serverPath+" is a directory. Please specify the location of srcsafe.ini");
-                    }
-
-                        //Open database.
-			IVSSDatabase database = ClassFactory.createVSSDatabase();
+			database = ClassFactory.createVSSDatabase();
 			database.open(serverPath, user, password);
-
+        }
+        catch(RuntimeException error)
+		{
+            listener.getLogger().println("[history] Unable to open database " + serverPath);
+			throw new IOException2(error);
+		}
+            
+        try
+        {
 			//Get history.
-			IVSSItem vssItem = database.vssItem(vssPath, false);
-			int vssLength = vssItem.spec().length();
-			int flag;
-			if(isRecursive)
-			{
-				flag = VSSFlags.VSSFLAG_RECURSYES.comEnumValue();
-			}
-			else
-			{
-				flag = VSSFlags.VSSFLAG_RECURSNO.comEnumValue();
-			}
-			IVSSVersions versions = vssItem.versions(flag);
-
-			//Loop through and collect he information.
-			List<Object[]> historyEntries = new ArrayList<Object[]>();
+            List<Object[]> historyEntries = new ArrayList<Object[]>();
 			int historyCount = 0;
-			Iterator iterator = versions.iterator();
-			while(historyCount < maxEntries && iterator.hasNext())
-			{
-				Com4jObject object = (Com4jObject)iterator.next();
-				IVSSVersion version = object.queryInterface(IVSSVersion.class);
+			for (String vssPath : vssPaths)
+            {    
+                IVSSItem vssItem = database.vssItem(vssPath, false);
+                int vssLength = vssItem.spec().length();
+                int flag;
+                if(isRecursive)
+                {
+                    flag = VSSFlags.VSSFLAG_RECURSYES.comEnumValue();
+                }
+                else
+                {
+                    flag = VSSFlags.VSSFLAG_RECURSNO.comEnumValue();
+                }
+                IVSSVersions versions = vssItem.versions(flag);
 
-				//Break off if the history entries are before the given start
-				//date.
-				Date historyDate = version.date();
-				if(historyDate.before(startDate))
-				{
-					version.dispose();
-					object.dispose();
-					break;
-				}
-				
-				//Form the history entry.
-				int versionNo = version.versionNumber();
-				IVSSItem historyItem = version.vssItem();
-				Object[] content = new Object[6];
-				content[0] = historyItem.spec();
-				content[1] = version.username();
-				content[2] = version.comment();
-				content[3] = version.action().trim();
-				content[4] = DATE_FORMAT.format(version.date());
-				content[5] = Integer.toString(versionNo);
+                //Loop through and collect the information.
+                Iterator iterator = versions.iterator();
+                while(historyCount < maxEntries && iterator.hasNext())
+                {
+                    Com4jObject object = (Com4jObject)iterator.next();
+                    IVSSVersion version = object.queryInterface(IVSSVersion.class);
 
-				//Workaround: VSS returns folder name for the files deleted or 
-				//added under it. This is workaround to find files added/deleted
-				//under a folder. Version no can not be 1 for files added or
-				//deleted. This check is only for safety.
-				if(versionNo != 1 && (DELETED_ACTION.equals(content[3]) || 
-				   DESTROYED_ACTION.equals(content[3]) || 
-				   ADDED_ACTION.equals(content[3]) || 
-				   RECOVERED_ACTION.equals(content[3])))
-				{
-					IVSSItem preItem = historyItem.version(versionNo - 1);
+                    //Break off if the history entries are before the given start
+                    //date.
+                    Date historyDate = version.date();
+                    if(historyDate.before(startDate))
+                    {
+                        version.dispose();
+                        object.dispose();
+                        break;
+                    }
 
-					//Collect files from this version and previous version.
-					Set post = collectItems(historyItem);
-					Set pre  = collectItems(preItem);
+                    //Form the history entry.
+                    int versionNo = version.versionNumber();
+                    IVSSItem historyItem = version.vssItem();
+                    Object[] content = new Object[6];
+                    content[0] = historyItem.spec();
+                    content[1] = version.username();
+                    content[2] = version.comment();
+                    content[3] = version.action().trim();
+                    content[4] = DATE_FORMAT.format(version.date());
+                    content[5] = Integer.toString(versionNo);
 
-					preItem.dispose();
+                    //Workaround: VSS returns folder name for the files deleted or 
+                    //added under it. This is workaround to find files added/deleted
+                    //under a folder. Version no can not be 1 for files added or
+                    //deleted. This check is only for safety.
+                    if(versionNo != 1 && (DELETED_ACTION.equals(content[3]) || 
+                       DESTROYED_ACTION.equals(content[3]) || 
+                       ADDED_ACTION.equals(content[3]) || 
+                       RECOVERED_ACTION.equals(content[3])))
+                    {
+                        IVSSItem preItem = historyItem.version(versionNo - 1);
 
-					//Collect the added/deleted file to post.
-					if(ADDED_ACTION.equals(content[3]) || 
-					   RECOVERED_ACTION.equals(content[3]))
-					{
-						post.removeAll(pre);
-					}
-					else
-					{
-						pre.removeAll(post);
-						post = pre;
-					}
+                        //Collect files from this version and previous version.
+                        Set post = collectItems(historyItem);
+                        Set pre  = collectItems(preItem);
 
-					//Find out the file added or deleted.
-					Iterator chgIterator = post.iterator();
-					if(chgIterator.hasNext())
-					{
-						content[0] = chgIterator.next();
-					}
-					
-				}
+                        preItem.dispose();
 
-				//Update deletions. It will be used if useUpdate is set.
-				if(deletions != null && (DELETED_ACTION.equals(content[3]) || 
-						RECOVERED_ACTION.equals(content[3])))
-				{
-					deletions.add(((String)content[0]).substring(vssLength));
-				}
-				
-				//Dispose off.
-				historyItem.dispose();
-				version.dispose();
-				object.dispose();
+                        //Collect the added/deleted file to post.
+                        if(ADDED_ACTION.equals(content[3]) || 
+                           RECOVERED_ACTION.equals(content[3]))
+                        {
+                            post.removeAll(pre);
+                        }
+                        else
+                        {
+                            pre.removeAll(post);
+                            post = pre;
+                        }
 
-				historyEntries.add(content);
+                        //Find out the file added or deleted.
+                        Iterator chgIterator = post.iterator();
+                        if(chgIterator.hasNext())
+                        {
+                            content[0] = chgIterator.next();
+                        }
 
-				historyCount ++;
-			}
+                    }
 
-			//Dispose.
-			while(iterator.hasNext())
-			{
-				Com4jObject object = (Com4jObject)iterator.next();
-				object.dispose();
-			}
+                    //Update deletions. It will be used if useUpdate is set.
+                    if(deletions != null && (DELETED_ACTION.equals(content[3]) || 
+                            RECOVERED_ACTION.equals(content[3])))
+                    {
+                        deletions.add(((String)content[0]).substring(vssLength));
+                    }
 
-			versions.dispose();
-			vssItem.dispose();
+                    //Dispose
+                    historyItem.dispose();
+                    version.dispose();
+                    object.dispose();
+
+                    historyEntries.add(content);
+
+                    historyCount++;
+                }
+
+                //Dispose.
+                while(iterator.hasNext())
+                {
+                    Com4jObject object = (Com4jObject)iterator.next();
+                    object.dispose();
+                }
+
+                versions.dispose();
+                vssItem.dispose();
+            }
+            
 			database.dispose();
 
+            listener.getLogger().println("[history] " + historyEntries.size() + " files changed since last build."); 
+            
 			return historyEntries;
 		}
 		catch(RuntimeException error)
@@ -469,7 +468,6 @@ public class VSSSCM extends SCM
 	}
 
 	/**
-	 * 
 	 * Gets the latest from the VSS to the given local path.
 	 * 
 	 * @param localPath Local directory path where the information has to be
@@ -477,14 +475,16 @@ public class VSSSCM extends SCM
 	 * @throws IOException Any error while getting the latest.
 	 * 
 	 */
-	private void get(String localPath) throws IOException
+	private void get(String localPath, String vssPath, TaskListener listener) throws IOException
 	{
+        listener.getLogger().println("[get] Getting source code from: " + vssPath);
+        
 		try
 		{
 			//Open database.
 			IVSSDatabase database = ClassFactory.createVSSDatabase();
 			database.open(serverPath, user, password);
-
+            
 			//Get the patch to the given VSS path.
 			IVSSItem vssItem = database.vssItem(vssPath, false);
 			int flags = VSSFlags.VSSFLAG_FORCEDIRNO.comEnumValue();
@@ -511,8 +511,8 @@ public class VSSSCM extends SCM
 			}
 
 			//Get the latest from vss.
-			vssItem.get(new Holder<String>(localPath), flags);
-
+            vssItem.get(new Holder<String>(localPath), flags);
+            
 			//Dispose.
 			vssItem.dispose();
 			database.dispose();
@@ -525,7 +525,6 @@ public class VSSSCM extends SCM
 	}
 
 	/**
-	 * 
 	 * Delete the given list of files.
 	 * 
 	 * @param workspace Base folder.
@@ -534,7 +533,8 @@ public class VSSSCM extends SCM
 	 */
 	private void delete(File workspace, List<String> deletions)
 	{
-        for (String deletion : deletions) {
+        for (String deletion : deletions)
+        {
             File file = new File(workspace,deletion);
             if(file.exists())
             {
@@ -551,7 +551,6 @@ public class VSSSCM extends SCM
     }
 
 	/**
-	 * 
 	 * Converts the input in the way that it can be written to the XML.
 	 * Special characters are converted to XML understandable way.
 	 * 
@@ -589,7 +588,6 @@ public class VSSSCM extends SCM
 	}
 
 	/**
-	 * 
 	 * Collects the sub items from the folder given.
 	 * 
 	 * @param folder Folder to be checked.
@@ -608,7 +606,16 @@ public class VSSSCM extends SCM
             Com4jObject object = (Com4jObject)iterator.next();
             IVSSItem item = object.queryInterface(IVSSItem.class);
 			itemSet.add(item.spec());
+            
+            // dispose
+            item.dispose();
 		}
+        
+        // dispose
+        // according to other code in this class, when iterator.hasNext is
+        // false you don't need to dispose the iterator.
+        items.dispose();
+        
 		return itemSet;
 	}
 
@@ -688,10 +695,80 @@ public class VSSSCM extends SCM
 	 * @return The VSS path.
 	 * 
 	 */
-	public String getVssPath()
+	public String getVssPaths()
 	{
-		return vssPath;
+        if (vssPaths.length == 0)
+        {
+            return "";
+        }
+
+        if (vssPaths.length == 1)
+        {
+            return vssPaths[0];
+        }
+
+        // Join the paths together
+        String joinedVssPaths = "";
+        for (String vssPath : vssPaths)
+        {
+            joinedVssPaths = joinedVssPaths + "," + vssPath;
+        }
+
+        // Crude method above
+        // So let's remove the ",path,path" first comma
+        if (joinedVssPaths.startsWith(",", 0))
+        {
+            joinedVssPaths = joinedVssPaths.substring(1);
+        }
+
+		return joinedVssPaths;
 	}
+
+    @Override
+    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> ab,
+                                                   Launcher lnchr,
+                                                   TaskListener tl) 
+                                                  throws IOException,
+                                                  InterruptedException
+    {
+        return SCMRevisionState.NONE;
+    }
+
+    @Override
+    protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project,
+                                                      Launcher lnchr,
+                                                      FilePath fp,
+                                                      TaskListener tl,
+                                                      SCMRevisionState scmrs)
+                                                     throws IOException,
+                                                     InterruptedException
+    {
+        //If this is the build then it deserves a build.
+		AbstractBuild<?, ?> lastBuild = (AbstractBuild<?,?>)project.getLastBuild();
+		if(lastBuild == null)
+		{
+			tl.getLogger().println("[poll] Last Build : #" + lastBuild.getNumber());
+		}
+		else
+		{
+			// If we've never built before, well, gotta build!
+            tl.getLogger().println("[poll] No previous build, so forcing an initial build.");
+            return PollingResult.BUILD_NOW;
+		}
+        
+        Date buildTime = lastBuild.getTimestamp().getTime();
+		
+        if(getHistoryEntries(buildTime, 1, null, tl).isEmpty())
+        {
+            tl.getLogger().println("[poll] No changes found in repository.");
+            return PollingResult.NO_CHANGES;
+        }
+        else
+        {
+            tl.getLogger().println("[poll] Changes found in repository.");
+            return PollingResult.SIGNIFICANT;
+        }        
+    }
 
 	/**
 	 * 
@@ -747,7 +824,9 @@ public class VSSSCM extends SCM
 		 * @return New instance of VSS SCM.
 		 * 
 		 */
-		public VSSSCM newInstance(StaplerRequest req) throws FormException
+        @Override
+		public VSSSCM newInstance(StaplerRequest req,
+                                  net.sf.json.JSONObject formData) throws FormException
 		{
 			return new VSSSCM(
 					req.getParameter("server_path"), 
