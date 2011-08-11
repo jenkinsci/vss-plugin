@@ -112,7 +112,7 @@ public class VSSSCM extends SCM
 	/**
 	 * Optional working folder
 	 */
-	private String workingFolder = null
+	private String workingFolder = null;
 	
 	/**
 	 * Indicates whether to keep the files in writable mode or not.
@@ -145,7 +145,7 @@ public class VSSSCM extends SCM
 	 */
 	public VSSSCM(String serverPath, String user, String password, 
 			String vssPath, boolean isWritable, boolean isRecursive, 
-			boolean useUpdate, string workingFolder)
+			boolean useUpdate, String workingFolder)
 	{
 		this.serverPath = serverPath;
 		this.user = user;
@@ -154,7 +154,7 @@ public class VSSSCM extends SCM
 		this.isWritable = isWritable;
 		this.isRecursive = isRecursive;
 		this.useUpdate = useUpdate;
-		this.workingFolder = workingFolder
+		this.workingFolder = workingFolder;
 	}
 
     /**
@@ -238,14 +238,17 @@ public class VSSSCM extends SCM
             // 1. remove the $/ symbol
             File file = new File(workspace.toURI());
             String localPath = "";
-			if (workingFolder.lenth == 0)
-			{
-				localPath = file.getAbsolutePath() + "/" + vssPath.substring(2);
-			}
-            else
+			
+			//Use the custom working folder if it was set
+			if ((workingFolder != null) & (workingFolder.length() > 0)) 
 			{
 				localPath = workingFolder;
 			}
+            else
+			{
+				localPath = file.getAbsolutePath() + "/" + vssPath.substring(2);
+			}
+			
             // 2. create the folders in the workspace
             try
             {
@@ -691,7 +694,7 @@ public class VSSSCM extends SCM
 	 */
 	public String getWorkingFolder()
 	{
-		return workinFolder;
+		return workingFolder;
 	}
 
 	/**
@@ -859,8 +862,8 @@ public class VSSSCM extends SCM
 					req.getParameter("vss_path"),
 					req.getParameter("writable") != null,
 					req.getParameter("recursive") != null,
-					req.getParameter("useupdate") != null);
-					req.getParameter("workingfolder")
+					req.getParameter("useupdate") != null,
+					req.getParameter("workingfolder"));
 		}
 	}
 }
