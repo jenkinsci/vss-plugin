@@ -15,6 +15,10 @@
 	  <f:textbox name="vss_path" value="${scm.vssPaths}"/>
   </f:entry>
 
+   <f:entry title="Custom working folder" description="This field can be used to set a working folder other than the automatically generated. If set this working folder will be used for all VSS Folder Paths">
+	  <f:textbox name="vss_workingFolder" value="${scm.workingFolder}"/>
+  </f:entry>
+ 
   <f:entry title="Keep the files as writable">
 	  <f:checkbox name="writable" checked="${scm.writable}"/>
   </f:entry>

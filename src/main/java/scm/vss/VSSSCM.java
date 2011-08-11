@@ -110,6 +110,11 @@ public class VSSSCM extends SCM
 	private String[] vssPaths = null;
 
 	/**
+	 * Optional working folder
+	 */
+	private String workingFolder = null
+	
+	/**
 	 * Indicates whether to keep the files in writable mode or not.
 	 */
 	private boolean isWritable = false;
@@ -136,10 +141,11 @@ public class VSSSCM extends SCM
 	 * not.
 	 * @param isRecursive Indicates whether to get the files in recursive order
 	 * or not.
+	 * @param workingFolder the working folder to use
 	 */
 	public VSSSCM(String serverPath, String user, String password, 
 			String vssPath, boolean isWritable, boolean isRecursive, 
-			boolean useUpdate)
+			boolean useUpdate, string workingFolder)
 	{
 		this.serverPath = serverPath;
 		this.user = user;
@@ -148,6 +154,7 @@ public class VSSSCM extends SCM
 		this.isWritable = isWritable;
 		this.isRecursive = isRecursive;
 		this.useUpdate = useUpdate;
+		this.workingFolder = workingFolder
 	}
 
     /**
@@ -230,8 +237,15 @@ public class VSSSCM extends SCM
 
             // 1. remove the $/ symbol
             File file = new File(workspace.toURI());
-            String localPath = file.getAbsolutePath() + "/" + vssPath.substring(2);
-            
+            String localPath = "";
+			if (workingFolder.lenth == 0)
+			{
+				localPath = file.getAbsolutePath() + "/" + vssPath.substring(2);
+			}
+            else
+			{
+				localPath = workingFolder;
+			}
             // 2. create the folders in the workspace
             try
             {
@@ -672,6 +686,16 @@ public class VSSSCM extends SCM
 
 	/**
 	 * 
+	 * @return The WorkingFolder.
+	 * 
+	 */
+	public String getWorkingFolder()
+	{
+		return workinFolder;
+	}
+
+	/**
+	 * 
 	 * @return VSS srcsafe.ini path.
 	 * 
 	 */
@@ -836,6 +860,7 @@ public class VSSSCM extends SCM
 					req.getParameter("writable") != null,
 					req.getParameter("recursive") != null,
 					req.getParameter("useupdate") != null);
+					req.getParameter("workingfolder")
 		}
 	}
 }
