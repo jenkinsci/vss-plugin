@@ -863,7 +863,7 @@ public class VSSSCM extends SCM
 					req.getParameter("writable") != null,
 					req.getParameter("recursive") != null,
 					req.getParameter("useupdate") != null,
-					req.getParameter("workingfolder"));
+					req.getParameter("vss_workingFolder"));
 		}
 	}
 }
