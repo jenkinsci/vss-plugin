@@ -242,7 +242,7 @@ public class VSSSCM extends SCM
 			//Use the custom working folder if it was set
 			if ((workingFolder != null) & (workingFolder.length() > 0)) 
 			{
-				localPath = workingFolder;
+				localPath = file.getAbsolutePath() + "/" + workingFolder;
 			}
             else
 			{
