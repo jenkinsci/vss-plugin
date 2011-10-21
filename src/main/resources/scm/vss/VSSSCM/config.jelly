@@ -15,7 +15,7 @@
 	  <f:textbox name="vss_path" value="${scm.vssPaths}"/>
   </f:entry>
 
-   <f:entry title="Custom working folder" description="This field can be used to set a working folder other than the automatically generated. If set this working folder will be used for all VSS Folder Paths. The working folder is relative to the workspace">
+   <f:entry title="Custom working folder" description="This field can be used to set a working folder other than the automatically generated. If set this working folder will be used for all VSS Folder Paths. At the moment this is an absolute path!">
 	  <f:textbox name="vss_workingFolder" value="${scm.workingFolder}"/>
   </f:entry>
  
