@@ -745,7 +745,7 @@ public class VSSSCM extends SCM
     {
         //If this is the build then it deserves a build.
 		AbstractBuild<?, ?> lastBuild = (AbstractBuild<?,?>)project.getLastBuild();
-		if(lastBuild == null)
+		if(lastBuild != null)
 		{
 			tl.getLogger().println("[poll] Last Build : #" + lastBuild.getNumber());
 		}
