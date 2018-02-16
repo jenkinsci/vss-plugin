@@ -110,6 +110,11 @@ public class VSSSCM extends SCM
 	private String[] vssPaths = null;
 
 	/**
+	 * Optional working folder
+	 */
+	private String workingFolder = null;
+	
+	/**
 	 * Indicates whether to keep the files in writable mode or not.
 	 */
 	private boolean isWritable = false;
@@ -136,10 +141,11 @@ public class VSSSCM extends SCM
 	 * not.
 	 * @param isRecursive Indicates whether to get the files in recursive order
 	 * or not.
+	 * @param workingFolder the working folder to use
 	 */
 	public VSSSCM(String serverPath, String user, String password, 
 			String vssPath, boolean isWritable, boolean isRecursive, 
-			boolean useUpdate)
+			boolean useUpdate, String workingFolder)
 	{
 		this.serverPath = serverPath;
 		this.user = user;
@@ -148,6 +154,7 @@ public class VSSSCM extends SCM
 		this.isWritable = isWritable;
 		this.isRecursive = isRecursive;
 		this.useUpdate = useUpdate;
+		this.workingFolder = workingFolder;
 	}
 
     /**
@@ -230,8 +237,18 @@ public class VSSSCM extends SCM
 
             // 1. remove the $/ symbol
             File file = new File(workspace.toURI());
-            String localPath = file.getAbsolutePath() + "/" + vssPath.substring(2);
-            
+            String localPath = "";
+			
+			//Use the custom working folder if it was set
+			if ((workingFolder != null) & (workingFolder.length() > 0)) 
+			{
+				localPath = file.getAbsolutePath() + "/" + workingFolder;
+			}
+            else
+			{
+				localPath = file.getAbsolutePath() + "/" + vssPath.substring(2);
+			}
+			
             // 2. create the folders in the workspace
             try
             {
@@ -672,6 +689,16 @@ public class VSSSCM extends SCM
 
 	/**
 	 * 
+	 * @return The WorkingFolder.
+	 * 
+	 */
+	public String getWorkingFolder()
+	{
+		return workingFolder;
+	}
+
+	/**
+	 * 
 	 * @return VSS srcsafe.ini path.
 	 * 
 	 */
@@ -835,7 +862,8 @@ public class VSSSCM extends SCM
 					req.getParameter("vss_path"),
 					req.getParameter("writable") != null,
 					req.getParameter("recursive") != null,
-					req.getParameter("useupdate") != null);
+					req.getParameter("useupdate") != null,
+					req.getParameter("vss_workingFolder"));
 		}
 	}
 }
